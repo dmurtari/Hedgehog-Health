@@ -1,6 +1,9 @@
 import time
 import datetime
 import RPi.GPIO as io
+import csv
+
+from temperature import TemperatureSensor as temperature
 
 io.setmode(io.BCM)
 
@@ -18,6 +21,8 @@ start = datetime.datetime.now()
 now = datetime.datetime.now()
 d_prev = 0
 t_prev = start
+temp_reader = temperature()
+written = False
 
 def convert(inches):
     feet = float(inches) / 12.0
@@ -31,6 +36,11 @@ def velocity(t1, t2, d1, d2):
     v = delta_x / delta_t
     v_converted = v * (3600.0 / 5280.0)
     return v_converted
+
+def write_output(time, revs, dist, v_i, v_a, temp):
+    with open('wheel.csv', 'a') as csv_file:
+        hedge_writer = csv.writer(csv_file, delimiter=',', quotechar='|')
+        hedge_writer.writerow([time, revs, dist, v_i, v_a, temp])
 
 while True:
     if not io.input(door_pin):
@@ -49,6 +59,25 @@ while True:
                 print("Instant Velocity", str(velocity(t_prev, now, d_prev, total_distance))[:3])
             sensor_triggered = True
             count += 1
+            if now.minute % 5 != 0:
+                written = False
+            if now.minute % 5 == 0 and not written:
+                write_output(now, revolutions, total_distance, \
+                             str(velocity(start, now, 0, total_distance))[:3], \
+                             str(velocity(t_prev, now, d_prev, total_distance))[:3], \
+                             str(temp_reader.read_temp()[1])[:4])
+                written = True
     if io.input(door_pin):
         if sensor_triggered:
             sensor_triggered = False
+    
+    
+    
+    
+    
+    
+    
+    
+
+                                  
+                                  
