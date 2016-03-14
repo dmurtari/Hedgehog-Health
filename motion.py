@@ -73,7 +73,7 @@ while True:
                      str(temp_reader.read_temp()[1])[:4])
         written = True                                                           
 
-    if now.hour % 5 == 0 and not tweeted:
+    if now.hour == 05  and not tweeted:
        tweeter = HedgehogTweeter()
        tweeter.tweet('Whew! Last night, I ran for ' + str(total_distance) + ' feet!')
        tweeted = True
