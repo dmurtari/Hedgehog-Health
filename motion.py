@@ -13,18 +13,13 @@ sensor_triggered = True
 
 io.setup(door_pin, io.IN, pull_up_down=io.PUD_UP)
 
-count = 0
-total_inches = 0
-total_distance = 0
-revolutions = 0
+count = total_inches = total_distance = revolutions = d_prev = top_speed = 0
+start = now = datetime.datetime.now()
+written = tweeted = False
 wheel_circumference = 33
-start = datetime.datetime.now()
-now = datetime.datetime.now()
-d_prev = 0
 t_prev = start
 temp_reader = temperature()
-written = False
-tweeted = False
+filename = str(now.day) + str(now.month) + 'night'
 
 def convert(inches):
     feet = float(inches) / 12.0
@@ -40,10 +35,16 @@ def velocity(t1, t2, d1, d2):
     return v_converted
 
 def write_output(time, revs, dist, v_a, v_i, temp):
-    with open('wheel3.csv', 'a') as csv_file:
+    with open(filename, 'a') as csv_file:
         hedge_writer = csv.writer(csv_file, delimiter=',', quotechar='|')
         hedge_writer.writerow([time, revs, dist, v_i, v_a, temp])
 
+def reset():
+    count = total_inches = total_distance = revolutions = d_prev = top_speed = 0
+    start = now = datetime.datetime.now()
+    written = tweeted = False
+    filename = str(now.day) + str(now.month) + 'night'
+    
 while True:
     if not io.input(door_pin):
         if not sensor_triggered:
@@ -56,9 +57,10 @@ while True:
                 total_inches += wheel_circumference 
                 total_distance = convert(total_inches)
                 print("Total Revolutions", revolutions)
-                print("Total Distance", total_distance) 
-                print("Average Velocity", str(velocity(start, now, 0, total_distance))[:3])
-                print("Instant Velocity", str(velocity(t_prev, now, d_prev, total_distance))[:3])
+                speed = str(velocity(t_prev, now, d_prev, total_distance))[:3]
+                if speed > top_speed:
+                    top_speed = speed
+                    
             sensor_triggered = True
             count += 1
     if io.input(door_pin):
@@ -73,7 +75,10 @@ while True:
                      str(temp_reader.read_temp()[1])[:4])
         written = True                                                           
 
-    if now.hour == 05  and not tweeted:
+    if now.hour == 07 and not tweeted:
        tweeter = HedgehogTweeter()
-       tweeter.tweet('Whew! Last night, I ran for ' + str(total_distance) + ' feet!')
+       tweeter.tweet(total_distance, top_speed)
        tweeted = True
+
+    if now.hour == 17:
+        reset()
