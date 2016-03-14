@@ -4,6 +4,7 @@ import RPi.GPIO as io
 import csv
 
 from temperature import TemperatureSensor as temperature
+from tweeter import HedgehogTweeter
 
 io.setmode(io.BCM)
 
@@ -23,6 +24,7 @@ d_prev = 0
 t_prev = start
 temp_reader = temperature()
 written = False
+tweeted = False
 
 def convert(inches):
     feet = float(inches) / 12.0
@@ -38,7 +40,7 @@ def velocity(t1, t2, d1, d2):
     return v_converted
 
 def write_output(time, revs, dist, v_a, v_i, temp):
-    with open('wheel1.csv', 'a') as csv_file:
+    with open('wheel3.csv', 'a') as csv_file:
         hedge_writer = csv.writer(csv_file, delimiter=',', quotechar='|')
         hedge_writer.writerow([time, revs, dist, v_i, v_a, temp])
 
@@ -71,5 +73,7 @@ while True:
                      str(temp_reader.read_temp()[1])[:4])
         written = True                                                           
 
-                                  
-                                  
+    if now.hour % 5 == 0 and not tweeted:
+       tweeter = HedgehogTweeter()
+       tweeter.tweet('Whew! Last night, I ran for ' + str(total_distance) + ' feet!')
+       tweeted = True
