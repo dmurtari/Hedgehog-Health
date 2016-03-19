@@ -19,7 +19,7 @@ written = tweeted = False
 wheel_circumference = 33
 t_prev = start
 temp_reader = temperature()
-filename = str(now.day) + str(now.month) + 'night'
+filename = str(now.day) + str(now.month) + 'night.csv'
 
 def convert(inches):
     feet = float(inches) / 12.0
@@ -43,24 +43,22 @@ def reset():
     count = total_inches = total_distance = revolutions = d_prev = top_speed = 0
     start = now = datetime.datetime.now()
     written = tweeted = False
-    filename = str(now.day) + str(now.month) + 'night'
+    filename = str(now.day) + str(now.month) + 'night.csv'
     
 while True:
     if not io.input(door_pin):
         if not sensor_triggered:
-            print count
-            if count % 2 == 0:
-                d_prev = total_distance
-                t_prev = now
-                now = datetime.datetime.now()
-                revolutions += 1
-                total_inches += wheel_circumference 
-                total_distance = convert(total_inches)
-                print("Total Revolutions", revolutions)
-                speed = str(velocity(t_prev, now, d_prev, total_distance))[:3]
-                if speed > top_speed:
-                    top_speed = speed
-                    
+            d_prev = total_distance
+            t_prev = now
+            now = datetime.datetime.now()
+            revolutions += 1
+            total_inches += wheel_circumference 
+            total_distance = convert(total_inches)
+            print("Total Revolutions", revolutions)
+            speed = str(velocity(t_prev, now, d_prev, total_distance))[:3]
+            if speed > top_speed and speed < 5:
+                top_speed = speed
+                
             sensor_triggered = True
             count += 1
     if io.input(door_pin):
@@ -75,10 +73,12 @@ while True:
                      str(temp_reader.read_temp()[1])[:4])
         written = True                                                           
 
-    if now.hour == 07 and not tweeted:
+    current_time = datetime.datetime.now()
+
+    if current_time.hour == 7 and not tweeted:
        tweeter = HedgehogTweeter()
        tweeter.tweet(total_distance, top_speed)
        tweeted = True
 
-    if now.hour == 17:
+    if current_time.hour == 17 and current_time.minute == 0 and current_time.second == 0:
         reset()
